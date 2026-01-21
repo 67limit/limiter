@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>67limit</title>
+<style>
+:root {
+  --blue: #2f80ff;
+  --red: #e74c3c;
+  --grey: #888888;
+  --text-bg: rgba(255,255,255,0.85);
+}
+
+html, body { margin:0; padding:0; width:100vw; height:100vh; }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex; flex-direction: column; align-items: center;
+  color: #222; min-height:100vh;
+  background: linear-gradient(to bottom, #ffffff, #f9f9f9);
+}
+
+@media (orientation: landscape) {
+  body {
+    background: linear-gradient(to right, #ffffff, #f9f9f9);
+  }
+}
+
+h1 { margin-bottom: 20px; color: var(--blue); }
+
+.main-container { 
+  display: flex; flex-direction: column; align-items: center; width:100%; gap:40px; padding:20px; 
+}
+
+@media(min-width:900px), (orientation: landscape){
+  .main-container { flex-direction: row; justify-content: center; align-items: flex-start; }
+  .circle-container { flex:0 0 auto; width:300px; height:300px; display:flex; justify-content:center; align-items:center; }
+  .stats-container { flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; max-width:500px; }
+}
+
+@media(max-width:900px) and (orientation: landscape){
+  .circle-container { width:35%; height:auto; }
+  .stats-container { width:60%; max-width:none; }
+}
+
+.circle-container { position: relative; width:240px; height:240px; }
+svg { transform: rotate(-90deg); }
+circle { fill:none; stroke-width:14; }
+.bg-circle { stroke:#dbe7ff; }
+.progress-circle { stroke: var(--blue); stroke-linecap: round; transition: stroke 0.3s, stroke-dashoffset 0.3s; }
+
+.center-button { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.center-button button {
+  width:140px; height:140px; border-radius:50%; border:none;
+  background: var(--blue); color:white; font-size:18px; font-weight:600; text-align:center;
+  padding:12px; cursor:pointer; transition: background 0.3s;
+}
+.center-button button.disabled { background: var(--grey); cursor: default; }
+.center-button span { display:block; font-size:14px; font-weight:400; margin-top:6px; }
+
+.stats {
+  font-size:14px; color:#222; background: var(--text-bg);
+  padding:16px 24px; border-radius:8px; text-align:left;
+  max-width:100%; line-height:1.4; margin-bottom:12px;
+}
+
+.reset-btn, #changeLimitBtn {
+  margin-top:12px; padding:18px 30px; border-radius:8px;
+  font-size:16px; border:none; cursor:pointer;
+}
+.reset-btn { background: var(--red); color:white; }
+#changeLimitBtn { background: var(--blue); color:white; }
+
+#historyList { list-style-type:disc; margin:0; padding-left:20px; line-height:1.2; transition:max-height 0.3s ease; overflow:hidden; max-height:3.6em; }
+
+#customPrompt { position:fixed; inset:0; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:100; }
+#promptBox { background:white; padding:30px; border-radius:12px; text-align:center; max-width:90%; box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+#promptBox input { width:60px; padding:6px 10px; font-size:16px; margin-top:10px; text-align:center; }
+#promptBox button { margin-top:15px; padding:8px 16px; background: var(--blue); color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px; }
+
+.dialogue { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.4); z-index:200; }
+.dialogueBox { background:white; padding:30px 40px; border-radius:12px; max-width:90%; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+.dialogueBox button { margin-top:20px; padding:10px 20px; background: var(--blue); color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px; }
+</style>
+</head>
+<body>
+
+<h1>67limit</h1>
+<div class="main-container">
+  <div class="circle-container">
+    <svg width="240" height="240">
+      <circle class="bg-circle" cx="120" cy="120" r="100"></circle>
+      <circle class="progress-circle" cx="120" cy="120" r="100" stroke-dasharray="628" stroke-dashoffset="628"></circle>
+    </svg>
+    <div class="center-button">
+      <button id="addBtn">
+        <div id="countText">0 / 67</div>
+        <span>Tap to add</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-container">
+    <div class="stats" id="lastStat">Last 67: <span id="lastTime">—</span></div>
+    <div class="stats" id="limitHistory" style="margin-top:16px; display:none;">
+      Limit history:
+      <ul id="historyList"></ul>
+      <button id="toggleHistoryBtn" style="margin-top:6px; padding:4px 8px; font-size:12px; border-radius:4px; border:none; background: var(--blue); color:white; cursor:pointer; display:none;">Show more</button>
+    </div>
+    <button id="changeLimitBtn">Change Limit</button>
+    <button class="reset-btn" id="resetBtn">Reset Everything</button>
+  </div>
+</div>
+
+<div id="customPrompt">
+  <div id="promptBox">
+    <div>Enter your daily 67 limit:</div>
+    <input type="number" id="limitInput" min="1" step="1" value="67"><br>
+    <button id="submitLimit">Start</button>
+  </div>
+</div>
+
+<div class="dialogue" id="resetDialogue">
+  <div class="dialogueBox">
+    It's okay to reset, it means you are trying to limit yourself.
+    <br>
+    <button id="closeResetDialogue">Close</button>
+  </div>
+</div>
+
+<div class="dialogue" id="limitDialogue">
+  <div class="dialogueBox">
+    <span id="limitMsg">You reached your limit! Try not to say 67.</span>
+    <br>
+    <button id="closeLimitDialogue">Close</button>
+  </div>
+</div>
+
+<div class="dialogue" id="sameLimitDialogue">
+  <div class="dialogueBox">
+    New limit can't be same as old one.
+    <br>
+    <button id="closeSameLimitDialogue">Close</button>
+  </div>
+</div>
+
+<script>
+const circumference = 2 * Math.PI * 100;
+const progressCircle = document.querySelector('.progress-circle');
+const addBtn = document.getElementById('addBtn');
+const countText = document.getElementById('countText');
+const lastTimeEl = document.getElementById('lastTime');
+const resetBtn = document.getElementById('resetBtn');
+const changeLimitBtn = document.getElementById('changeLimitBtn');
+const historyList = document.getElementById('historyList');
+const toggleHistoryBtn = document.getElementById('toggleHistoryBtn');
+
+const customPrompt = document.getElementById('customPrompt');
+const limitInput = document.getElementById('limitInput');
+const submitLimit = document.getElementById('submitLimit');
+
+const resetDialogue = document.getElementById('resetDialogue');
+const closeResetDialogue = document.getElementById('closeResetDialogue');
+const limitDialogue = document.getElementById('limitDialogue');
+const limitMsg = document.getElementById('limitMsg');
+const sameLimitDialogue = document.getElementById('sameLimitDialogue');
+const closeSameLimitDialogue = document.getElementById('closeSameLimitDialogue');
+
+let historyExpanded = false;
+
+function todayKey(){ return new Date().toDateString(); }
+
+function timeSince(last){
+  if(!last) return "—";
+  const now = new Date(), then = new Date(last);
+  let diff = Math.floor((now-then)/1000);
+  const units=[
+    {label:"y", value:Math.floor(diff/(365*24*3600))},
+    {label:"mo", value:Math.floor((diff%(365*24*3600))/(30*24*3600))},
+    {label:"d", value:Math.floor((diff%(30*24*3600))/(24*3600))},
+    {label:"h", value:Math.floor((diff%(24*3600))/3600)},
+    {label:"min", value:Math.floor((diff%3600)/60)},
+    {label:"s", value:diff%60}
+  ];
+  return units.filter(u=>u.value>0).map(u=>u.value+u.label).join(" ");
+}
+
+function formatDate(last){ if(!last) return ""; return new Date(last).toLocaleString(); }
+
+function loadLimitHistory(){
+  const history=JSON.parse(localStorage.getItem('limitHistory'))||[];
+  const historyContainer=document.getElementById('limitHistory');
+  if(history.length===0){ historyContainer.style.display='none'; return; }
+  historyContainer.style.display='block';
+  historyList.innerHTML='';
+  history.forEach(item=>{
+    const li=document.createElement('li');
+    li.textContent=`${item.value} (changed at ${new Date(item.time).toLocaleString()})`;
+    historyList.appendChild(li);
+  });
+  toggleHistoryBtn.style.display = history.length>3?'inline-block':'none';
+  historyList.style.maxHeight='3.6em';
+  toggleHistoryBtn.textContent='Show more';
+  historyExpanded=false;
+}
+
+toggleHistoryBtn.onclick=()=>{
+  historyExpanded=!historyExpanded;
+  if(historyExpanded){ historyList.style.maxHeight="none"; toggleHistoryBtn.textContent="Show less"; }
+  else { historyList.style.maxHeight="3.6em"; toggleHistoryBtn.textContent="Show more"; }
+}
+
+function updateUI(){
+  const limit=parseInt(localStorage.getItem('limit'))||67;
+  const count=parseInt(localStorage.getItem('count'))||0;
+  countText.textContent=`${count} / ${limit}`;
+  const progress=Math.min(count/limit,1);
+  progressCircle.style.strokeDasharray=circumference;
+  progressCircle.style.strokeDashoffset=circumference*(1-progress);
+  const remaining=limit-count;
+  progressCircle.style.stroke = remaining<=5?'var(--red)':'var(--blue)';
+  addBtn.classList.toggle('disabled', count>=limit);
+  const last=localStorage.getItem('lastTime');
+  lastTimeEl.textContent = last?`${timeSince(last)} (${formatDate(last)})`:"—";
+}
+
+const limitMessages=[
+  "Don't say 67! Keep your streak!","Remember your daily limit!","Think twice before saying 67!","Stop! The 67 limit is reached.",
+  "You're almost there, but resist!","Hold your tongue!","67 is tempting, but no!","You can do it! Stay strong!","Take a deep breath, don't 67!","Resist the urge!",
+  "Limit reached! Reflect.","The hand movement? Better not.","Patience is a virtue!","Your daily 67 is done!","Think of the consequences!","Almost there, stay mindful!","Don't break your streak!",
+  "Your 67 count is maxed!","Take a moment, think again!","Try something else, not 67!","You can do it! Avoid 67!","Almost perfect, don't slip!","The limit exists for a reason!",
+  "Focus! Avoid 67!","Good job reaching the limit!","Hand movement is discouraged!","Think before you speak 67!","Resist temptation, friend!","Daily 67 complete, celebrate without adding!"
+];
+
+// Close listener for persuasion message
+document.getElementById('closeLimitDialogue').onclick = () => { limitDialogue.style.display='none'; };
+
+submitLimit.onclick=()=>{
+  let limit=Number(limitInput.value);
+  if(!Number.isInteger(limit)||limit<=0){ alert("Invalid number!"); return; }
+  localStorage.setItem('limit',limit);
+  localStorage.setItem('count',0);
+  customPrompt.style.display='none';
+  loadLimitHistory(); updateUI();
+}
+
+addBtn.onclick=()=>{
+  let count=parseInt(localStorage.getItem('count'))||0;
+  const limit=parseInt(localStorage.getItem('limit'));
+  if(count>=limit){
+    const msg=limitMessages[Math.floor(Math.random()*limitMessages.length)];
+    limitMsg.textContent = msg; 
+    limitDialogue.style.display='flex';
+    return;
+  }
+  count++; localStorage.setItem('count',count);
+  localStorage.setItem('lastTime',new Date().toISOString());
+  updateUI();
+  if(count>=limit){
+    const msg=limitMessages[Math.floor(Math.random()*limitMessages.length)];
+    limitMsg.textContent = msg;
+    limitDialogue.style.display='flex';
+  }
+}
+
+resetBtn.onclick=()=>{
+  if(!confirm("Are you sure?")) return;
+  if(!confirm("This will reset everything.")) return;
+  if(!confirm("Last chance. Reset?")) return;
+  localStorage.clear(); countText.textContent="0 / 67"; addBtn.classList.remove('disabled');
+  progressCircle.style.strokeDashoffset=circumference; progressCircle.style.stroke='var(--blue)';
+  lastTimeEl.textContent="—"; historyList.innerHTML=''; resetDialogue.style.display='flex';
+}
+
+closeResetDialogue.onclick=()=>{ resetDialogue.style.display='none'; customPrompt.style.display='flex'; }
+closeSameLimitDialogue.onclick=()=>sameLimitDialogue.style.display='none';
+
+changeLimitBtn.onclick=()=>{
+  const oldLimit=parseInt(localStorage.getItem('limit'))||67;
+  const count=parseInt(localStorage.getItem('count'))||0;
+  let newLimit=prompt("Enter your new daily 67 limit:");
+  if(newLimit===null) return;
+  newLimit=Number(newLimit);
+  if(!Number.isInteger(newLimit)||newLimit<=0){ alert("Invalid number!"); return; }
+  if(newLimit===oldLimit){ sameLimitDialogue.style.display='flex'; return; }
+  if(newLimit<count){ alert(`New limit cannot be less than current progress (${count} / ${oldLimit})`); return; }
+  localStorage.setItem('limit',newLimit);
+  const history=JSON.parse(localStorage.getItem('limitHistory'))||[];
+  history.push({value:newLimit,time:new Date().toISOString()});
+  localStorage.setItem('limitHistory',JSON.stringify(history));
+  loadLimitHistory(); updateUI();
+}
+
+function init(){
+  const storedDate=localStorage.getItem('date');
+  if(storedDate!==todayKey()){ localStorage.clear(); localStorage.setItem('date',todayKey()); }
+  if(localStorage.getItem('limit')) customPrompt.style.display='none';
+  else customPrompt.style.display='flex';
+  loadLimitHistory();
+  updateUI();
+  setInterval(updateUI,1000);
+}
+
+init();
+</script>
+</body>
+</html>
